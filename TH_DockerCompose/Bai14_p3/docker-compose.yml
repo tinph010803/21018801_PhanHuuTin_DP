@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "8085:80"
+      - "8080:8080"  # Dashboard Traefik
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - traefik
+
+  flask:
+    build: ./flask
+    container_name: flask_app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flask.rule=Host(`flask.localhost`)"
+      - "traefik.http.services.flask.loadbalancer.server.port=5000"
+    networks:
+      - traefik
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_app
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wp
+      WORDPRESS_DB_PASSWORD: wp123
+      WORDPRESS_DB_NAME: wp_db
+    depends_on:
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wp.rule=Host(`wp.localhost`)"
+      - "traefik.http.services.wp.loadbalancer.server.port=80"
+    networks:
+      - traefik
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wp_db
+      MYSQL_USER: wp
+      MYSQL_PASSWORD: wp123
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - traefik
+
+volumes:
+  db_data:
+
+networks:
+  traefik:
