@@ -1,0 +1,78 @@
+services:
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - PRODUCT_SERVICE=http://product-service:4001
+      - CUSTOMER_SERVICE=http://customer-service:4002
+      - ORDER_SERVICE=http://order-service:4003
+    depends_on:
+      - product-service
+      - customer-service
+      - order-service
+
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - MONGODB_URI=mongodb+srv://teophan370:teophan370@cluster0.lkqqg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+    depends_on:
+      - order-db
+  order-db:
+    image: mongo
+    container_name: order-db
+    ports:
+      - "27019:27017"
+    volumes:
+      - order-data:/data/db
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - MONGODB_URI=mongodb+srv://teophan370:teophan370@cluster0.lkqqg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+    depends_on:
+      - product-db
+
+  product-db:
+    image: mongo
+    container_name: product-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - product-data:/data/db
+  customer-service:
+    build: ./customer-service
+    container_name: customer-service
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - MONGODB_URI=mongodb+srv://teophan370:teophan370@cluster0.lkqqg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+    depends_on:
+      - customer-db
+
+  customer-db:
+    image: mongo
+    container_name: customer-db
+    ports:
+      - "27018:27017"
+    volumes:
+      - customer-data:/data/db
+volumes:
+  product-data:
+  customer-data:
+  order-data:
+
+
+
